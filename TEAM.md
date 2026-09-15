@@ -7,7 +7,7 @@
 - Tên nhóm: KTD
 - Người đại diện / MSSV: Trần Ngọc Khánh / 2A202602923
 - Tên repo: `K4-L3-DAY04-KTD-PromptEngineeringToolCalling`
-- URL repo, nhánh nộp, commit chốt:
+- URL repo, nhánh nộp, commit chốt: https://github.com/trankhanh6162/K4-L3-DAY04-KTD-PromptEngineeringToolCalling
 - Deadline áp dụng và link thông báo đổi hạn nếu có:
 
 ## Thành viên
