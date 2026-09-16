@@ -104,7 +104,7 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
     <div class="flex items-center space-x-3 mt-1 sm:mt-0 font-mono text-[11px] text-slate-400">
       <span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-        <i class="fa-solid fa-microchip text-slate-400 mr-1"></i> <span id="status-provider-model">openrouter (ag/gemini-3-flash)</span>
+        <i class="fa-solid fa-microchip text-slate-400 mr-1"></i> <span id="status-provider-model">Đang kết nối...</span>
       </span>
       <span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-slate-300 font-bold" id="status-accuracy-pill">
         Accuracy: 96.7%
@@ -825,11 +825,40 @@ class AgentUIServer:
             self.history.append({"role": "user", "content": user_text})
             self.history.append({"role": "assistant", "content": assistant_text})
         except Exception as exc:
-            turn_record.update({
-                "status": "provider_error",
-                "error": f"{type(exc).__name__}: {str(exc)}",
-                "assistant_text": f"Lỗi thực thi Provider: {exc}",
-            })
+            provider_err = f"{type(exc).__name__}: {str(exc)}"
+            if self.provider_name not in ("local", "mock", "offline"):
+                try:
+                    from providers.local_provider import LocalProvider
+                    fallback_provider = LocalProvider()
+                    result = run_model_tool_loop(
+                        provider=fallback_provider,
+                        messages=messages,
+                        tools=self.openai_tools,
+                        model="local-fallback",
+                        max_tool_rounds=self.max_tool_rounds,
+                    )
+                    turn_record.update(result)
+                    assistant_text = (result.get("assistant_text") or "").strip()
+                    fallback_notice = (
+                        f"\n\n*(⚠️ Đã tự động kích hoạt chế độ **Local Offline Fallback** do provider '{self.provider_name}' gặp sự cố: `{provider_err}`)*"
+                    )
+                    assistant_text += fallback_notice
+                    turn_record["assistant_text"] = assistant_text
+                    turn_record["status"] = "completed_fallback_local"
+                    self.history.append({"role": "user", "content": user_text})
+                    self.history.append({"role": "assistant", "content": assistant_text})
+                except Exception as fb_exc:
+                    turn_record.update({
+                        "status": "provider_error",
+                        "error": f"{provider_err} | Local Fallback error: {fb_exc}",
+                        "assistant_text": f"Lỗi thực thi Provider ({self.provider_name}): {exc}",
+                    })
+            else:
+                turn_record.update({
+                    "status": "provider_error",
+                    "error": provider_err,
+                    "assistant_text": f"Lỗi thực thi Provider: {exc}",
+                })
 
         turn_record["ended_at"] = now_iso()
         self.transcript["turns"].append(turn_record)
@@ -1091,7 +1120,7 @@ def make_handler(agent_server: AgentUIServer):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Live Web UI for IT Helpdesk Agent with Tool Calling diagnostics.")
-    parser.add_argument("--provider", default="openrouter", choices=["openrouter", "openai", "anthropic", "gemini"])
+    parser.add_argument("--provider", default="openrouter", choices=["openrouter", "openai", "anthropic", "gemini", "local"])
     parser.add_argument("--version", default="v3")
     parser.add_argument("--model", default=None)
     parser.add_argument("--port", type=int, default=8080)

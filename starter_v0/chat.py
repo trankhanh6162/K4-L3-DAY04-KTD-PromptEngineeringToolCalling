@@ -90,7 +90,16 @@ def run_model_tool_loop(
     all_tool_events: list[dict[str, Any]] = []
 
     for round_index in range(1, max_tool_rounds + 1):
-        response = provider.complete(working_messages, tools, model=model, temperature=0.0)
+        try:
+            response = provider.complete(working_messages, tools, model=model, temperature=0.0)
+        except Exception as exc:
+            if type(provider).__name__ != "LocalProvider":
+                print(f"[fallback] Provider error ({type(exc).__name__}: {exc}). Tự động chuyển sang Local Offline Fallback...")
+                from providers.local_provider import LocalProvider
+                provider = LocalProvider()
+                response = provider.complete(working_messages, tools, model="local-fallback", temperature=0.0)
+            else:
+                raise
         calls = response.tool_calls
         round_record: dict[str, Any] = {
             "round": round_index,
@@ -151,7 +160,7 @@ def write_transcript(path: Path, transcript: dict[str, Any]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Interactive IT Helpdesk Agent chat with transcript logging.")
-    parser.add_argument("--provider", choices=["openrouter", "openai", "anthropic", "gemini"], required=True)
+    parser.add_argument("--provider", choices=["openrouter", "openai", "anthropic", "gemini", "local"], required=True)
     parser.add_argument("--model", default=None)
     parser.add_argument("--version", required=True, help="Student-chosen artifact version label, e.g. v0, v1, v2.")
     parser.add_argument("--system-prompt", type=Path, default=ARTIFACTS_DIR / "system_prompt.md")
