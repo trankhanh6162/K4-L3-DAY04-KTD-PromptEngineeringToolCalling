@@ -15,6 +15,7 @@ from .policy.tool import search_company_policy
 from .search_kb.tool import search_kb
 from .search_device_info.tool import search_device_info
 from .check_asset_warranty.tool import check_asset_warranty
+from .resolve_asset.tool import resolve_asset
 
 
 # These names are part of the fixed evaluation contract. Keep built-in names
@@ -32,6 +33,7 @@ TOOL_FUNCTIONS = {
     "policy": search_company_policy,
     "create_ticket": create_ticket,
     "check_asset_warranty": check_asset_warranty,
+    "resolve_asset": resolve_asset,
 }
 
 

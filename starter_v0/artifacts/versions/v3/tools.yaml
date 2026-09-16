@@ -115,3 +115,12 @@ tools:
         alert_threshold_days: {type: integer, default: 180, description: "Ngưỡng số ngày cảnh báo sắp hết hạn bảo hành"}
       required: [asset_id]
 
+  - name: resolve_asset
+    description: "Tìm thiết bị khi người dùng cung cấp ID không chính xác, tên model, tên nhân viên hoặc mô tả thay vì asset ID chuẩn. Trả về danh sách thiết bị khớp kèm điểm và lý do. Nếu chỉ 1 kết quả, dùng asset_id đó cho tool tiếp theo; nếu nhiều kết quả, hỏi người dùng chọn qua clarify(choice)."
+    parameters:
+      type: object
+      properties:
+        query: {type: string, description: "Chuỗi tìm kiếm: ID gần đúng (vd lt204), tên model (thinkpad), tên nhân viên, hoặc mô tả (laptop floor 3)"}
+        max_results: {type: integer, default: 5, description: "Số kết quả tối đa trả về"}
+      required: [query]
+
